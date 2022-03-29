@@ -1,0 +1,10 @@
+{
+  "name": "workboots",
+  "version": "1.0.0",
+  "description": "a lightweight message proxy for webworkers",
+  "main": "src/index.js",
+  "repository": "github.com/john-holland/work-boots",
+  "author": "John Holland",
+  "license": "MIT",
+  "private": false
+}
