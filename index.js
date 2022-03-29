@@ -1,1 +1,1 @@
-export * from "src/work-boots";
+export * from "./src/work-boots";
