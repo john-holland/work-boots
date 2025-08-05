@@ -138,20 +138,28 @@ class WorkBoots {
 
   postMessage(data, origin = null, transfer = []) {
     if (!this.isReady) {
-      this.onMessageCallback(data, origin, transfer);
+      if (this.onMessageCallback) {
+        this.onMessageCallback(data, origin, transfer);
+      }
       return;
     }
 
-    const message = 'data' in data ? data : { data };
+    // Handle undefined/null data
+    if (data === undefined || data === null) {
+      data = { data: null };
+    }
+
+    const message = (data && typeof data === 'object' && 'data' in data) ? data : { data };
     console.log(`supports worker: ${this.supportsWorker}`);
-    if (this.supportsWorker) {
+    
+    if (this.supportsWorker && this.worker && typeof this.worker.postMessage === 'function') {
       // Handle different worker types
       if (isBrowser) {
         this.worker.postMessage(...[data, transfer.length > 0 ? transfer : undefined].filter(arg => !!arg));
       } else if (isNode) {
         this.worker.postMessage(data, transfer);
       }
-    } else {
+    } else if (this.socks && typeof this.socks.onMessageLocal === 'function') {
       this.socks.onMessageLocal(message, transfer);
     }
   }
@@ -194,13 +202,13 @@ class WorkBoots {
   }
 
   terminate() {
-    if (this.supportsWorker) {
+    if (this.supportsWorker && this.worker && typeof this.worker.terminate === 'function') {
       if (isBrowser) {
         this.worker.terminate();
       } else if (isNode) {
         this.worker.terminate();
       }
-    } else {
+    } else if (this.socks && typeof this.socks.terminate === 'function') {
       this.socks.terminate();
     }
   }
