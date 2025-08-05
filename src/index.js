@@ -58,7 +58,7 @@ class WorkBoots {
           console.log('background worker not supported, switching to shorter socks (main thread eval).', e)
         }
       }
-      if (!this.supportsWorker || !this.worker) {
+      if (!this.supportsWorker) {
         this.supportsWorker = false;
         // Handle import errors gracefully with Browserify compatibility
         this.loadSocksFile(socksFile).then(({ socks }) => {
@@ -84,10 +84,6 @@ class WorkBoots {
           this.isReady = true;
           resolve(this);
         });
-      } else if (this.worker) {
-        // If we have a worker, resolve immediately
-        resolve(this);
-      }
       }
     });
   }
@@ -148,14 +144,14 @@ class WorkBoots {
 
     const message = 'data' in data ? data : { data };
     console.log(`supports worker: ${this.supportsWorker}`);
-    if (this.supportsWorker && this.worker && typeof this.worker.postMessage === 'function') {
+    if (this.supportsWorker) {
       // Handle different worker types
       if (isBrowser) {
         this.worker.postMessage(...[data, transfer.length > 0 ? transfer : undefined].filter(arg => !!arg));
       } else if (isNode) {
         this.worker.postMessage(data, transfer);
       }
-    } else if (this.socks && typeof this.socks.onMessageLocal === 'function') {
+    } else {
       this.socks.onMessageLocal(message, transfer);
     }
   }
@@ -198,13 +194,13 @@ class WorkBoots {
   }
 
   terminate() {
-    if (this.supportsWorker && this.worker && typeof this.worker.terminate === 'function') {
+    if (this.supportsWorker) {
       if (isBrowser) {
         this.worker.terminate();
       } else if (isNode) {
         this.worker.terminate();
       }
-    } else if (this.socks && typeof this.socks.terminate === 'function') {
+    } else {
       this.socks.terminate();
     }
   }
