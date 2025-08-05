@@ -12,9 +12,9 @@
   "private": false,
   "scripts": {
     "build": "npm run build:browser && npm run build:node",
-    "build:browser": "browserify src/index.js -o dist/work-boots.browser.js -s WorkBoots",
+    "build:browser": "browserify src/index.js -o dist/work-boots.browser.js -s WorkBoots --ignore worker_threads",
     "build:node": "cp src/index.js dist/work-boots.js",
-    "build:worker": "browserify src/work-boots.js -o dist/work-boots.worker.js -s WorkBoots",
+    "build:worker": "browserify src/work-boots.js -o dist/work-boots.worker.js -s WorkBoots --ignore worker_threads",
     "test": "node --experimental-vm-modules node_modules/.bin/jest",
     "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch",
     "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
@@ -28,6 +28,7 @@
     "@babel/core": "^7.23.0",
     "@babel/preset-env": "^7.23.0",
     "babel-jest": "^29.7.0",
+    "babelify": "^10.0.0",
     "browserify": "^17.0.0",
     "eslint": "^8.50.0",
     "jest": "^29.7.0",
@@ -37,16 +38,10 @@
   },
   "browserify": {
     "transform": [
-      [
-        "babelify",
-        {
-          "presets": [
-            "@babel/preset-env"
-          ]
-        }
-      ]
+      ["babelify", { "presets": ["@babel/preset-env"] }]
     ],
-    "standalone": "WorkBoots"
+    "standalone": "WorkBoots",
+    "ignore": ["worker_threads"]
   },
   "keywords": [
     "webworker",
