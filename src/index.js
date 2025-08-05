@@ -1,27 +1,24 @@
-
 /**
-    we should be able to include files with or without support of webworkers
-    and use the same interface, although support for svg+d3 sort of makes this a
-    pointless exercise...
-
-    but just for kicks... lol
-
-    One downside of this is it will require explicit output from webpack to make
-    the local and web worker support work.
- */
-/**
-  Reliable work boots, a background worker proxy object, that will defer evaluation to the local main thread
-  if background workers are not supported by the browser.
-
-  @param socksFile [string] the fully qualified path to the socks background worker file
-  @param instantiateWorker [function(string)] a function to generate Workers, mostly should be left unaltered
-    otherwise used for tests.
+ * Universal entry point for work-boots
+ * Compatible with Browserify, Node.js, and ES modules
  */
 
 // Detect environment
 const isNode = typeof process !== 'undefined' && process.versions && process.versions.node;
 const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
 
+// Universal require/import function
+function universalRequire(moduleName) {
+  if (isNode) {
+    // In Node.js, use dynamic import
+    return import(moduleName);
+  } else {
+    // In browser, assume it's available globally or bundled
+    return Promise.resolve({ default: global[moduleName] });
+  }
+}
+
+// Enhanced WorkBoots with Browserify compatibility
 class WorkBoots {
   constructor({ socksFile, instantiateWorker = null }) {
     if (socksFile === undefined) {
@@ -63,8 +60,8 @@ class WorkBoots {
       }
       if (!this.supportsWorker) {
         this.supportsWorker = false;
-        // Handle import errors gracefully
-        import(socksFile).then(({ socks }) => {
+        // Handle import errors gracefully with Browserify compatibility
+        this.loadSocksFile(socksFile).then(({ socks }) => {
           this.socks = socks;
           this.socks.enterBoots(this);
           this.isReady = true;
@@ -89,6 +86,20 @@ class WorkBoots {
         });
       }
     });
+  }
+
+  // Browserify-compatible module loading
+  async loadSocksFile(socksFile) {
+    try {
+      // Try ES module import first
+      return await import(socksFile);
+    } catch (error) {
+      // Fallback to require for Browserify compatibility
+      if (typeof require !== 'undefined') {
+        return require(socksFile);
+      }
+      throw error;
+    }
   }
 
   detectWorkerSupport() {
@@ -167,14 +178,6 @@ class WorkBoots {
     }
   }
 
-  /**
-   *
-   * @param data
-   * @param origin
-   * @param transfer
-   * @note: This may need a map of origin to work-boot, in case the import function
-   *   uses a browser cache for socks files
-   */
   onMessageLocal(data, origin, transfer = []) {
     console.log(`sending local message that would have been to origin ${origin}`);
     if (transfer?.length > 0) {
@@ -203,31 +206,7 @@ class WorkBoots {
   }
 }
 
-// strictly the client side of the worker
-/**
-E.X.:
-
-const socks = new Socks(self);
-
-socks.onMessage(...)
-
-const someCoolFunction = () => {
-  ...
-  socks.postMessage(coolData);
-};
-
-export {
-  socks
-};
- */
-/**
-  A background worker interface proxy wrapper object, that should be exported
-  from the background worker module.
-
-  @param self [object]: the implicitly declared "self" object as a part of the
-    EMCA background worker spec. If undefined, socks will still be exported, and
-    the background worker will defer to the main thread.
- */
+// Enhanced Socks with Browserify compatibility
 class Socks {
   constructor(self = undefined) {
     this.self = self;
@@ -270,14 +249,6 @@ class Socks {
     this.self = undefined;
   }
 
-  /**
-   posts a message to the background worker, and optinally an array of objects to`
-   transfer thread context ownership of.
-
-   @param data [object] a message to send
-   @param transfer [array], an array of references to objects that you would like to transfer
-     into another thread context, NOTE: these will no longer be accessible in the current thread!
-   */
   postMessage(data, origin /* = window?.document?.location?.origin*/, transfer = []) {
     if (!this.isReady) {
       this.postsBeforeReady.push([data, origin, transfer]);
@@ -351,7 +322,23 @@ class Socks {
   }
 }
 
-export {
-  WorkBoots,
-  Socks
-};
+// Universal exports for all environments
+export { WorkBoots, Socks };
+
+// CommonJS compatibility for Browserify
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { WorkBoots, Socks };
+}
+
+// AMD compatibility
+if (typeof define === 'function' && define.amd) {
+  define([], function() {
+    return { WorkBoots, Socks };
+  });
+}
+
+// Global compatibility for browser
+if (typeof window !== 'undefined') {
+  window.WorkBoots = WorkBoots;
+  window.Socks = Socks;
+} 
