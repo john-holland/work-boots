@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import { WorkBoots, Socks } from './work-boots.js';
+import { WorkBoots, Socks } from './index.js';
 import { MockWorker, MockNodeWorker, isNode, isBrowser } from './test-utils.js';
 
 describe('Simple Tests', () => {
