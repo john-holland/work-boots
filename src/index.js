@@ -1,5 +1,5 @@
 /**
- * Universal entry point for work-boots
+ * Universal entry point for work-÷boots
  * Compatible with Browserify, Node.js, and ES modules
  */
 
